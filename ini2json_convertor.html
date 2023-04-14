@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8">
+<title> Ini to Json Converter </title>
+
+<style>
+.container {
+  display: table;
+  width: 20%;
+}
+.table-row {
+  display: table-row;
+  height: 100px;
+}
+.table-cell {
+  display: table-cell;
+  padding: 5px;
+}
+.table-cell-hidden {
+  display: table-cell;
+  padding: 5px;
+  display: none;
+}
+</style>
+</head>
+
+
+<body>
+
+<div class="container">
+    <div class="table-row">
+
+	<div class="table-cell">
+		<h3>Input settings in Ini format:</h3>
+<textarea id="textAreaIniFileTextInput" rows="20" cols="50" placeholder="; Type your Ini file here 
+[Example]
+key1=value1
+key2=value2">
+</textarea>
+		<br>
+		<input id="btnSubmit" type="button" value="Submit">  
+	</div>
+
+	<div id=divResult  class="table-cell-hidden" >
+		<h3>JSON output:</h3>
+		<textarea id="textAreaJsonOutput" rows="20" cols="50">
+		</textarea>
+	</div>
+
+	</div>
+</div>
+
+
+<script>
+function parseINIString(data) {
+    let regex = {
+        section: /^\s*\[\s*([^\]]*)\s*\]\s*$/,
+        param: /^\s*(^[a-zA-Z0-9_.]*?)\s*=\s*(.*?)\s*$/,
+        comment: /^\s*;.*$/
+    };
+    let result = {};
+    let lines = data.split(/[\r\n]+/);
+    let section = null;
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        if (regex.comment.test(line)) {
+            continue;
+        } else if (regex.param.test(line)) {
+            let match = line.match(regex.param);
+            let key = match[1];
+            let value = match[2];
+            if (value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+                value = value.substr(1, value.length - 2);
+            }
+
+            if (section) {
+                if (result[section][key] !== undefined) {
+                    return "Err: Multiple keys in a section";
+                }
+
+                result[section][key] = value;
+            } else {
+                if (result[key] !== undefined) {
+                    return "Err: Multiple keys in a section";
+                }
+
+                result[key] = value;
+            }
+        } else if (regex.section.test(line)) {
+            let match = line.match(regex.section);
+            result[match[1]] = {};
+            section = match[1];
+        } else if (line.length == 0 && section) {
+            section = null;
+        } else {
+            return "Err: An input error";
+        }
+    }
+    return JSON.stringify(result);
+}
+
+function processIniInput() {
+    let textInputArea = document.getElementById("textAreaIniFileTextInput");
+    let divResult = document.getElementById("divResult");
+    let textOutputArea = document.getElementById("textAreaJsonOutput");
+
+    let result = parseINIString(textInputArea.value);
+    if (result !== null) {
+        textOutputArea.value = result;
+    } else {
+        textOutputArea.value = "Input error";
+    }
+    divResult.style.display = "block"; // unhide
+}
+
+document.addEventListener("DOMContentLoaded", function(event) {
+    let btnSubmit = document.getElementById("btnSubmit");
+    btnSubmit.addEventListener("click", processIniInput);
+});
+</script>
+
+</body>
+
+</html>
